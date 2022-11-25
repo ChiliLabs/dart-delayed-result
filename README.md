@@ -1,39 +1,114 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
-
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages). 
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages). 
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
-
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+The `DelayedResult` is a helper class to implement segmented state pattern (idle, loading, error, success) without boilerplate code.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+Add the `DelayedResult` dependency to your project:
 
-```dart
-const like = 'sample';
 ```
+  delayed_result:
+    git:
+      url: https://github.com/ChiliLabs/dart-delayed-result.git
+      ref: main
+```
+
+You can use it in any suitable way, for example as field in a `flutter_bloc` BLoC state:
+
+```
+class HomeState {
+	final DelayedResult<DashboardData> dashboardResult;
+	final DelayedResult<bool> saveResult;
+}
+```
+
+And then in your BLoC in an event mapper:
+
+```
+  void _onGreetingRequested(
+    GreetingRequested event,
+    Emitter<HomeState> emit,
+  ) async {
+    if (state.greetingResult.isInProgress) return;
+    emit(
+      state.copyWith(
+        greetingResult: const DelayedResult.inProgress(),
+      ),
+    );
+    try {
+      final greeting = await _homeRepository.greet(state.name);
+      emit(
+        state.copyWith(
+          greetingResult: DelayedResult.fromValue(greeting),
+        ),
+      );
+    } on Exception catch (ex) {
+      emit(
+        state.copyWith(
+          greetingResult: DelayedResult.fromError(ex),
+        ),
+      );
+    }
+  }
+}
+```
+
+
+And in your widget `build` method:
+
+```
+@override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: BlocBuilder<HomeBloc, HomeState>(
+        builder: (context, state) {
+          final result = state.greetingResult;
+          final isProgress = result.isInProgress;
+          if (isProgress) {
+            return const _GreetingStatus(
+              status: 'Requesting greeting...',
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          final error =
+              result.isError ? _mapExceptionToError(result.error) : null;
+
+          final isError = error != null;
+          if (isError) {
+            return _GreetingStatus(
+              status: error,
+              child: ElevatedButton(
+                onPressed: _requestGreeting,
+                child: const Text('Retry'),
+              ),
+            );
+          }
+
+          final isNone = result.isNone;
+          final value = result.value;
+
+          if (isNone || value == null) {
+            return _GreetingStatus(
+              status: 'No greeting yet',
+              child: ElevatedButton(
+                onPressed: _requestGreeting,
+                child: const Text('Request greeting'),
+              ),
+            );
+          }
+
+          return _GreetingStatus(
+            status: value,
+            child: ElevatedButton(
+              onPressed: _requestGreeting,
+              child: const Text('Request another greeting'),
+            ),
+          );
+        },
+      ),
+    );
+  }
+```  
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+You can find a full tutorial here: [TODO: add link]
