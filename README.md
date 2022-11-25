@@ -111,4 +111,4 @@ And in your widget `build` method:
 
 ## Additional information
 
-You can find a full tutorial here: [TODO: add link]
+You can find a full tutorial here: https://chililabs.io/blog/segmented-state-pattern-with-delayed-result
