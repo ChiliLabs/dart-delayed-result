@@ -27,6 +27,9 @@ class DelayedResult<T> extends Equatable {
         error = null,
         isInProgress = false;
 
+  factory DelayedResult.fromNullable(T? value) =>
+      value == null ? DelayedResult.none() : DelayedResult.fromValue(value);
+
   static DelayedResult<dynamic> success() =>
       const DelayedResult.fromValue(_placeholder);
 
